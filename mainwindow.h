@@ -22,9 +22,7 @@ private slots:
 
 private:
     Ui::MainWindow *ui;
-    FormRespect* plot;
-
-    void setPixel(QImage *image, double i, int x, int y);
+    FormRespect* ploter;
 };
 
 #endif // MAINWINDOW_H

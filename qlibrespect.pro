@@ -9,8 +9,7 @@ CONFIG += debug
 
 TARGET = qLibReSpect
 TEMPLATE = app
-LIBS += -lsndfile\
-        -L../respect-build-desktop\
+LIBS += -L../respect-build-desktop-Qt_in_PATH_Release\
        # -R../respect-build-desktop\
         -lrespect
 
@@ -18,39 +17,19 @@ SOURCES += main.cpp\
     formrespect.cpp \
     graphicsview.cpp \
     markerpoint.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    wavefile.cpp
 
 HEADERS  += formrespect.h \
     graphicsview.h \
     markerpoint.h \
-    mainwindow.h
+    mainwindow.h \
+    wavefile.h
 
 FORMS += \
     formrespect.ui \
     mainwindow.ui
 
 INCLUDEPATH += $$PWD/../respect
-DEPENDPATH += $$PWD/../respect-build-desktop
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+DEPENDPATH += $$PWD/../respect-build-desktop-Qt_in_PATH_Release
 

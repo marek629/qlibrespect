@@ -1,4 +1,5 @@
 #include "formrespect.h"
+#include "wavefile.h"
 #include <librespect.h>
 #include <QScrollBar>
 #include <QGraphicsPixmapItem>
@@ -11,6 +12,10 @@
 #define AXIS_MARGIN 5
 #define AXIS_MARK_LENGTH 3
 #define AXIS_WIDTH 2
+
+QColor FormRespect::colorMin (Qt::black);
+QColor FormRespect::colorMax (Qt::green);
+QColor FormRespect::colorOverflow (Qt::red);
 
 static const QString markerFileExt = ".smr";
 
@@ -66,6 +71,74 @@ void FormRespect::setupView(const QImage &image)
     scene = new QGraphicsScene();
     ui->view->setScene(scene);
     ui->view->setPixmap(QPixmap::fromImage(image));
+}
+
+void FormRespect::setupView(const QString &filePath)
+{
+    WaveFile file(filePath,this);
+    setupView(&file);
+}
+
+void FormRespect::setupView(WaveFile *file)
+{
+    bool open = file->isOpen();
+    if (!open && !file->open(QIODevice::ReadOnly))
+    {
+        QMessageBox::critical(this, tr("Open File Error"),
+                              tr("Open file failed. Check your permissions."));
+        return;
+    }
+    double sndTime = file->realTime();
+    int sndFrequency = file->maxFrequency();
+    setFileTime(sndTime);
+    setFileFreq(sndFrequency);
+    view()->setMaxTime(sndTime);
+    view()->setMaxFreq(sndFrequency);
+    QString statusText = QString::number(sndTime,'g',6) + " s   " +
+                         QString::number(sndFrequency) + " Hz";
+    emit setStatusMessage(statusText);
+
+    quint16 bufferSize = 512;
+    quint16 halfBufferSize = bufferSize * 0.5;
+    double* arrayPreviousRead = new double [halfBufferSize];
+    double* arrayRead = new double [halfBufferSize];
+    double* arrayFFT = new double [bufferSize];
+    LibReSpect spect;
+    quint32 framesBuffer = file->numSamples() / halfBufferSize + 1;
+    QImage image(framesBuffer,halfBufferSize,QImage::Format_ARGB32);
+
+    // First samples counting
+    file->readData(arrayFFT,bufferSize);
+    for (quint16 i=0, j=halfBufferSize; i<halfBufferSize; i++, j++)
+        arrayPreviousRead[i] = arrayFFT[j];
+    spect.makeWindow(arrayFFT);
+    spect.countFFT(arrayFFT);
+    for (quint16 j=0, k=halfBufferSize-1; j<halfBufferSize; j++, k--)
+        setPixel(&image,arrayFFT[j],0,k);
+
+    // Next samples counting
+    for (quint16 i=1; i<framesBuffer; i++)
+    {
+        file->readData(arrayRead,halfBufferSize);
+        for (quint16 j=0, k=halfBufferSize; j<halfBufferSize; j++,k++)
+        {
+            arrayFFT[j] = arrayPreviousRead[j];
+            arrayFFT[k] = arrayRead[j];
+            arrayPreviousRead[j] = arrayRead[j];
+        }
+        spect.makeWindow(arrayFFT);
+        spect.countFFT(arrayFFT);
+        for (quint16 j=0, k=halfBufferSize-1; j<halfBufferSize; j++, k--)
+            setPixel(&image,arrayFFT[j],i,k);
+    }
+
+    setupView(image);
+    if (open)
+        file->close();
+
+    delete [] arrayPreviousRead;
+    delete [] arrayRead;
+    delete [] arrayFFT;
 }
 
 void FormRespect::resizeEvent(QResizeEvent *)
@@ -212,4 +285,39 @@ void FormRespect::loadFrom()
 {
     load( QFileDialog::getOpenFileName(this, tr("Load Markers"), QDir::homePath(),
                                            tr("Marker files")+" (*"+markerFileExt+")") );
+}
+
+void FormRespect::setPixel(QImage *image, double i, int x, int y)
+{
+    QColor color;
+    if (i>1.0)
+        color = colorOverflow;
+    else
+    {
+        int r1 = colorMin.red();
+        int g1 = colorMin.green();
+        int b1 = colorMin.blue();
+        int r2 = colorMax.red();
+        int g2 = colorMax.green();
+        int b2 = colorMax.blue();
+        color.setRed((r2-r1)*i);
+        color.setGreen((g2-g1)*i);
+        color.setBlue((b2-b1)*i);
+    }
+    image->setPixel(x,y,color.rgb());
+}
+
+void FormRespect::setColorMin(const QString &name)
+{
+    colorMin = QColor(name);
+}
+
+void FormRespect::setColorMax(const QString &name)
+{
+    colorMax = QColor(name);
+}
+
+void FormRespect::setColorOverflow(const QString &name)
+{
+    colorOverflow = QColor(name);
 }

@@ -14,8 +14,8 @@ const QString helpString = QObject::tr("Usage:\n\n"
                                        "--- view manipulations ---\n"
                                        " left click and move to move view\n"
                                        " mouse scroll to zooming time\n"
-                                       " mouse scroll with right mouse button pressed to zooming frequency\n"
-                                       " mouse scroll with Ctrl key pressed to zooming time and frequncy");
+                                       " mouse scroll when right mouse button pressed to zooming frequency\n"
+                                       " mouse scroll when Ctrl key pressed to zooming time and frequncy");
 
 GraphicsView::GraphicsView(QWidget* parent) : QGraphicsView(parent)
 {
