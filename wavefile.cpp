@@ -128,13 +128,49 @@ qint64 WaveFile::readCue() {
             result += read(reinterpret_cast<char *>(&cue.list[i]), cuePointLength);
         }
         qDebug() << "Cue Point count:" << cue.numCuePoints;
-        // reading external (not supported yet) chunks
+        if (atEnd())
+            return result;
+        // reading external chunks
+        while (true) {
+            result += read(reinterpret_cast<char *>(&list.descriptor), chunkLength);
+            // reading not supported chunks
+            if (memcmp(list.descriptor.id,"LIST",4) != 0) {
+                result += read(list.descriptor.size).size();
+                continue;
+            }
+            break;
+        }
+        result += read(reinterpret_cast<char *>(&list.typeID), 4);
+        if (memcmp(list.typeID,"adtl",4) != 0)
+            return -3;
+        LabeledTextChunk labeledText;
         while (!atEnd()) {
-            Chunk descriptor;
-            result += read(reinterpret_cast<char *>(&descriptor), chunkLength);
-            QByteArray array(descriptor.id, 4);
-            qDebug() << array;
-            result += read(descriptor.size).size();
+            result += read(reinterpret_cast<char *>(&labeledText.label),labelHeaderLength);
+            int labelSize = labeledText.label.descriptor.size - 4;
+            if (memcmp(labeledText.label.descriptor.id,"ltxt",4) != 0) {
+                labeledText.codePage = 0;
+                labeledText.country = 0;
+                labeledText.dialect = 0;
+                labeledText.lang = 0;
+                labeledText.purposeID = 0;
+                labeledText.sampleLength = 0;
+            }
+            else if (memcmp(labeledText.label.descriptor.id,"smpl",4) == 0)
+                return result;
+            else {
+                int readed = read(reinterpret_cast<char *>(&labeledText.sampleLength),
+                                  labeledTextBodyLength);
+                result += readed;
+                labelSize -= readed;
+            }
+            // reading text
+            labeledText.label.text.clear();
+            for (; labelSize > 0 && !atEnd(); labelSize--) {
+                char c;
+                result += read(&c,1);
+                labeledText.label.text.append(c);
+            }
+            list.list.append(labeledText);
         }
     }
     else
