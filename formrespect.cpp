@@ -104,11 +104,11 @@ void FormRespect::setupView(WaveFile *file)
     double* arrayRead = new double [halfBufferSize];
     double* arrayFFT = new double [bufferSize];
     LibReSpect spect;
-    quint32 framesBuffer = file->numSamples() / halfBufferSize + 1;
+    quint32 framesBuffer = file->numSamples() / halfBufferSize;
     QImage image(framesBuffer,halfBufferSize,QImage::Format_ARGB32);
 
     // First samples counting
-    file->readData(arrayFFT,bufferSize);
+    qint64 readedBytes = file->readData(arrayFFT,bufferSize);
     for (quint16 i=0, j=halfBufferSize; i<halfBufferSize; i++, j++)
         arrayPreviousRead[i] = arrayFFT[j];
     spect.makeWindow(arrayFFT);
@@ -119,7 +119,7 @@ void FormRespect::setupView(WaveFile *file)
     // Next samples counting
     for (quint16 i=1; i<framesBuffer; i++)
     {
-        file->readData(arrayRead,halfBufferSize);
+        readedBytes += file->readData(arrayRead,halfBufferSize);
         for (quint16 j=0, k=halfBufferSize; j<halfBufferSize; j++,k++)
         {
             arrayFFT[j] = arrayPreviousRead[j];
@@ -132,8 +132,11 @@ void FormRespect::setupView(WaveFile *file)
             setPixel(&image,arrayFFT[j],i,k);
     }
 
+    qDebug() << "Readed data bytes:" << readedBytes;
+    file->readCue();
+
     setupView(image);
-    if (open)
+    if (!open)
         file->close();
 
     delete [] arrayPreviousRead;

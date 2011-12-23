@@ -2,6 +2,7 @@
 #define WAVEFILE_H
 
 #include <QFile>
+#include <QVector>
 
 class WaveFile : public QFile
 {
@@ -13,6 +14,9 @@ public:
     WaveFile(const QString &name, QObject *parent);
     qint64 readHeader();
     qint64 readData(double *buffer, int bufferSize, int channelId = 0);
+    qint64 readCue();
+    int bytesPerSample() const { return header.wave.bitsPerSample / 8; }
+    int posDataEnd() const { return dataOffset + header.data.descriptor.size; }
     int numChannels() const { return header.wave.numChannels; }
     int numSamples() const { return  header.data.descriptor.size /
                 (header.wave.bitsPerSample/8) / header.wave.numChannels; }
@@ -28,19 +32,20 @@ public:
     virtual qint64 size() const { return QFile::size(); }
 
 private:
-    struct chunk
+    bool isFirstSample;
+    struct Chunk
     {
         char        id[4];
         quint32     size;
     };
     struct RIFFHeader
     {
-        chunk       descriptor;     // "RIFF"
+        Chunk       descriptor;     // "RIFF"
         char        type[4];        // "WAVE"
     };
     struct WAVEHeader
     {
-        chunk       descriptor;
+        Chunk       descriptor;
         quint16     audioFormat;
         quint16     numChannels;
         quint32     sampleRate;
@@ -50,7 +55,7 @@ private:
     };
     struct DATAHeader
     {
-        chunk       descriptor;
+        Chunk       descriptor;
     };
     struct CombinedHeader
     {
@@ -59,8 +64,32 @@ private:
         DATAHeader  data;
     };
     CombinedHeader header;
-    static const int HeaderLength = sizeof(CombinedHeader);
-    bool isFirstSample;
+    static const int headerLength = sizeof(CombinedHeader);
+    static const int chunkLength = sizeof(Chunk);
+    int dataOffset;
+    struct LabelChunk
+    {
+        Chunk       descriptor;
+        int         cuePointID;
+        QString     text;
+    };
+    struct CuePoint
+    {
+        int         id;
+        int         position;
+        char        dataID[4];
+        int         chunkStart;
+        int         blockStart;
+        int         sampleOffset;
+    };
+    struct CueChunk
+    {
+        Chunk       descriptor;
+        int         numCuePoints;
+        QVector<CuePoint>  *list;
+    };
+    CueChunk cue;
+    static const int cueLength = sizeof(CueChunk);
 };
 
 #endif // WAVEFILE_H

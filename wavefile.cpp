@@ -1,4 +1,5 @@
 #include "wavefile.h"
+#include <QByteArray>
 #include <QDebug>
 
 WaveFile::WaveFile(QObject *parent) : QFile(parent)
@@ -20,8 +21,8 @@ qint64 WaveFile::readHeader() {
         result = seek(0); //true when index position of reading file is 0
     if (result != 0)
     {
-        result = (read(reinterpret_cast<char *>(&header), HeaderLength) == HeaderLength); //reading metadata into header
-        if (result) //true when bytes readed are HeaderLength long;
+        result = read(reinterpret_cast<char *>(&header), headerLength); //reading metadata into header
+        if (result == headerLength) //true when bytes readed are HeaderLength long;
         {
             if ((memcmp(&header.riff.descriptor.id, "RIFF", 4) == 0
                 || memcmp(&header.riff.descriptor.id, "RIFX", 4) == 0)
@@ -29,15 +30,15 @@ qint64 WaveFile::readHeader() {
                 && memcmp(&header.wave.descriptor.id, "fmt ", 4) == 0
                 && header.wave.audioFormat == 1 ) // true when is PCM
             {
-                result = 0;
                 while (memcmp(&header.data.descriptor.id, "data", 4) != 0)
                 {
-                    this->read(header.data.descriptor.size); //changing offset
-                    read( reinterpret_cast<char *>(&header.data), 8 ); //overwrite header.data
+                    result += read(header.data.descriptor.size).size(); //changing offset
+                    result += read( reinterpret_cast<char *>(&header.data), sizeof(Chunk) ); //overwrite header.data
                 }
                 qDebug() << "readHeader:file name" << fileName()
                          << ": size =" << size()
                          << ": data.descriptor :" << header.data.descriptor.id << header.data.descriptor.size;
+                dataOffset = result;
             }
             else
             {
@@ -70,14 +71,15 @@ qint64 WaveFile::readData(double *buffer, int bufferSize, int channelId) {
 
     if (header.wave.bitsPerSample > 0)
     {
-        for (int i=0; i<bufferSize; i++)
+        for (int i=0; i<bufferSize && pos()<posDataEnd(); i++)
         {
             if (isFirstSample)
             {
                 isFirstSample = false;
-                read( (header.wave.bitsPerSample/8) * (channelId) );
+                result += read( (header.wave.bitsPerSample/8) * (channelId) ).size();
             }
             Sample = read( (header.wave.bitsPerSample/8) * header.wave.numChannels ).toHex();
+            result += Sample.size() / 2;
             tmp = Sample.right(2);
             Sample.remove(Sample.length()-2,2);//remove last 2 chars
             tmp.append(Sample.right(2));
@@ -106,6 +108,27 @@ qint64 WaveFile::readData(double *buffer, int bufferSize, int channelId) {
         qDebug() << "error - readData:bitsPerSample: " << header.wave.bitsPerSample ;
         result = -1;
     }
+    return result;
+}
+
+qint64 WaveFile::readCue() {
+    cue.numCuePoints = 0;
+    cue.descriptor.size = 0;
+    if (atEnd())
+        return -1;
+    qint64 result = read(reinterpret_cast<char *>(&cue), chunkLength);
+    if ( result == chunkLength ) {
+        while (memcmp(cue.descriptor.id,"cue ",4) != 0) {
+            result += read(cue.descriptor.size).size();
+            result += read(reinterpret_cast<char *>(&cue), chunkLength);
+        }
+        result += read(reinterpret_cast<char *>(&cue.numCuePoints), sizeof(int));
+        // są jeszcze problemy z ładowaniem listy cue point, ale ogólnie działa
+//        result += read(reinterpret_cast<char *>(&cue.list), sizeof(QVector<CuePoint>));
+        qDebug() << "Cue Point count:" << cue.numCuePoints;
+    }
+    else
+        return -2;
     return result;
 }
 
