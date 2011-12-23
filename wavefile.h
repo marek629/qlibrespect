@@ -86,10 +86,10 @@ private:
     {
         Chunk       descriptor;
         int         numCuePoints;
-        QVector<CuePoint>  *list;
+        QVector<CuePoint>   list;
     };
     CueChunk cue;
-    static const int cueLength = sizeof(CueChunk);
+    static const int cuePointLength = sizeof(CuePoint);
 };
 
 #endif // WAVEFILE_H

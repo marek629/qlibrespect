@@ -123,9 +123,19 @@ qint64 WaveFile::readCue() {
             result += read(reinterpret_cast<char *>(&cue), chunkLength);
         }
         result += read(reinterpret_cast<char *>(&cue.numCuePoints), sizeof(int));
-        // są jeszcze problemy z ładowaniem listy cue point, ale ogólnie działa
-//        result += read(reinterpret_cast<char *>(&cue.list), sizeof(QVector<CuePoint>));
+        cue.list.resize(cue.numCuePoints);
+        for (int i=0; i<cue.numCuePoints; i++) {
+            result += read(reinterpret_cast<char *>(&cue.list[i]), cuePointLength);
+        }
         qDebug() << "Cue Point count:" << cue.numCuePoints;
+        // reading external (not supported yet) chunks
+        while (!atEnd()) {
+            Chunk descriptor;
+            result += read(reinterpret_cast<char *>(&descriptor), chunkLength);
+            QByteArray array(descriptor.id, 4);
+            qDebug() << array;
+            result += read(descriptor.size).size();
+        }
     }
     else
         return -2;
