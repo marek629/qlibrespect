@@ -33,3 +33,6 @@ FORMS += \
 INCLUDEPATH += $$PWD/../respect
 DEPENDPATH += $$PWD/../respect-build-desktop-Qt_in_PATH_Release
 
+OTHER_FILES += \
+    TODO
+

@@ -7,19 +7,29 @@
 
 class QPixmap;
 
+// Plot (spectrogram) widget class
 class GraphicsView : public QGraphicsView
 {
     Q_OBJECT
 public:
     GraphicsView(QWidget* parent = 0);
+    // Set plot pixmap
     void setPixmap(QPixmap pixmap);
+    // Returns pointer to plot pixmap item
     QGraphicsPixmapItem* pixmapItem() const { return graphicsPixmapItem; }
+    // Returns reference to map containig pointer to graphics view's item and marker point object
     const QMap<QGraphicsItem*,MarkerPoint> &markerMap() const { return markerPointMap; }
+    // Set time length of wave file in seconds
     void setMaxTime(double);
+    // Set maximum frequency value in Hz witch it can be in wave file
     void setMaxFreq(int);
+    // Returns time value in seconds of wave file
     double maxTime() const { return fileTime; }
+    // Returns maximum frequency value in Hz witch it can be in wave file
     int maxFreq() const { return fileFreq; }
+    // Removes marker item from this object and returns removed marker point object
     MarkerPoint removeItem(QGraphicsItem *itemPtr);
+    // Adds marker into this object coresponding with MarkerPoint object marker data and radius size
     QGraphicsItem *addItem(const MarkerPoint &marker, uchar radius = markerPointRadius);
 
 protected:
@@ -37,6 +47,7 @@ signals:
     void selectedItemChanged(const QString &);
 
 public slots:
+    // Synchronize marker's string with plain text edit field from main window
     void selectedTextChanged();
 
 private:

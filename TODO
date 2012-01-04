@@ -1,0 +1,7 @@
+1 Debug WaveFile::readCue() function
+2 Create line and range marker classes
+  * create base class AbstractMarker
+  * rebase MarkerPoint class to AbstractMarker class
+3 Automaticaly detection of beep part
+  * cut (extract) detected beep parts into another *.wav files
+  * export detected beep parts start/stop time to XML
