@@ -116,64 +116,85 @@ qint64 WaveFile::readCue() {
     cue.descriptor.size = 0;
     if (atEnd())
         return -1;
+    //reading main part of cue chunk
     qint64 result = read(reinterpret_cast<char *>(&cue), chunkLength);
     if ( result == chunkLength ) {
         while (memcmp(cue.descriptor.id,"cue ",4) != 0) {
             result += read(cue.descriptor.size).size();
             result += read(reinterpret_cast<char *>(&cue), chunkLength);
         }
-        result += read(reinterpret_cast<char *>(&cue.numCuePoints), sizeof(int));
+        result += read(reinterpret_cast<char *>(&cue.numCuePoints), sizeof(cue.numCuePoints));
         cue.list.resize(cue.numCuePoints);
-        for (int i=0; i<cue.numCuePoints; i++) {
+        for (qint32 i=0; i<cue.numCuePoints; i++) {
             result += read(reinterpret_cast<char *>(&cue.list[i]), cuePointLength);
         }
         qDebug() << "Cue Point count:" << cue.numCuePoints;
         if (atEnd())
             return result;
-        // reading external chunks
-        while (true) {
-            result += read(reinterpret_cast<char *>(&list.descriptor), chunkLength);
-            // reading not supported chunks
-            if (memcmp(list.descriptor.id,"LIST",4) != 0) {
-                result += read(list.descriptor.size).size();
-                continue;
+
+        // reading list chunk and details
+        DataListChunk list;     //main LIST chunk
+        while (true)
+        {
+            result += read(reinterpret_cast<char *>(&list), chunkLength); // searching for "LIST" chunk
+            if (memcmp(list.descriptor.id,"LIST",4) == 0)
+            {
+                //LIST was found reading rest of it
+                result += read(reinterpret_cast<char *>(&list.typeID) ,4);
+                if (memcmp(list.typeID,"adtl",4) == 0)
+                    break;
+                else
+                    return result; // chunk List was found, but was containing incorrect data
             }
-            break;
-        }
-        result += read(reinterpret_cast<char *>(&list.typeID), 4);
-        if (memcmp(list.typeID,"adtl",4) != 0)
-            return -3;
-        LabeledTextChunk labeledText;
-        while (!atEnd()) {
-            result += read(reinterpret_cast<char *>(&labeledText.label),labelHeaderLength);
-            int labelSize = labeledText.label.descriptor.size - 4;
-            if (memcmp(labeledText.label.descriptor.id,"ltxt",4) != 0) {
-                labeledText.codePage = 0;
-                labeledText.country = 0;
-                labeledText.dialect = 0;
-                labeledText.lang = 0;
-                labeledText.purposeID = 0;
-                labeledText.sampleLength = 0;
-            }
-            else if (memcmp(labeledText.label.descriptor.id,"smpl",4) == 0)
+            else if(atEnd()) // chunk List not found, this mean it didn't found descryption of marks
                 return result;
-            else {
-                int readed = read(reinterpret_cast<char *>(&labeledText.sampleLength),
-                                  labeledTextBodyLength);
-                result += readed;
-                labelSize -= readed;
-            }
-            // reading text
-            labeledText.label.text.clear();
-            for (; labelSize > 0 && !atEnd(); labelSize--) {
-                char c;
-                result += read(&c,1);
-                labeledText.label.text.append(c);
-            }
-            list.list.append(labeledText);
         }
+        //chunk List was readed wholly proper, looking for rest of cue chank's
+        Chunk temp; //temporary chunk
+        //data list's
+        listLabels.clear();
+        listNotes.clear();
+        listLtxt.clear();
+        while(!atEnd())
+        {
+            result += read(reinterpret_cast<char *>(&temp),sizeof(temp));
+            if (memcmp(temp.id,"ltxt",4) == 0)
+            {
+                LabeledTextChunk ltxt;
+                result += read(reinterpret_cast<char *>(&ltxt),sizeof(ltxt)-sizeof(ltxt.text));
+                ltxt.text.clear();
+                int sizeOfText = (int)temp.size - sizeof(ltxt) + sizeof(ltxt.text); // size of text stored in chunk
+                ltxt.text.reserve(sizeOfText);
+                result += read(reinterpret_cast<char *>(&ltxt.text),sizeOfText); // it will work ?
+                listLtxt.append(ltxt);
+                qDebug() << "ltxt text: " << ltxt.text;
+            }
+            else if (memcmp(temp.id,"labl",4) == 0)
+            {
+                LabelChunk label;
+                result += read(reinterpret_cast<char *>(&label.cuePointID),sizeof(label.cuePointID));
+                label.text.clear();
+                int sizeOfText = (int)temp.size - sizeof(label) + sizeof(label.text); // size of text stored in chunk
+                label.text.reserve(sizeOfText);
+                result += read(reinterpret_cast<char *>(&label.text),sizeOfText); // its working ? i dont think so..
+                listLabels.append(label);
+                qDebug() << "label text: " << label.text;   //program crash here
+            }
+            else if (memcmp(temp.id,"note",4) == 0)
+            {
+                NoteChunk note;
+                result += read(reinterpret_cast<char *>(&note.cuePointID),sizeof(note.cuePointID));
+                note.text.clear();
+                int sizeOfText = (int)temp.size - sizeof(note) + sizeof(note.text); // size of text stored in chunk
+                note.text.reserve(sizeOfText);
+                result += read(reinterpret_cast<char *>(&note.text),sizeOfText);
+                listNotes.append(note);
+                qDebug() << "note text: " << note.text;
+            }
+        }
+        return result; //and of file, returning
     }
-    else
+    else //at EOF
         return -2;
     return result;
 }
