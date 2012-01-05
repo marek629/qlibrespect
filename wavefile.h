@@ -50,6 +50,7 @@ private:
         char        id[4];
         quint32     size;
     };
+
     struct RIFFHeader
     {
         Chunk       descriptor;     // "RIFF"
@@ -79,6 +80,7 @@ private:
     static const int headerLength = sizeof(CombinedHeader);
     static const int chunkLength = sizeof(Chunk);
     int dataOffset;
+ //cue chunk section
     struct CuePoint
     {
         quint32     id;
@@ -96,31 +98,34 @@ private:
     };
     CueChunk cue;
     static const int cuePointLength = sizeof(CuePoint);
-    struct LabelChunk
+    struct DataListChunk // "list"
     {
         Chunk       descriptor;
-        quint32     cuePointID;
-        QString     text;
+        char        typeID[4];
     };
-    struct LabeledTextChunk
+    struct LabeledTextChunk // "ltxt"
     {
-        LabelChunk  label;
+       // Chunk       descriptor;
+        quint32     cuePointID;
         quint32     sampleLength;
         quint32     purposeID;
         quint16     country;
         quint16     lang;
         quint16     dialect;
         quint16     codePage;
+        QString     text;
     };
-    struct ListChunk
+    struct LabelChunk // "label"
     {
-        Chunk       descriptor;
-        char        typeID[4];
-        QList<LabeledTextChunk> list;
+       // Chunk       descriptor;
+        quint32     cuePointID;
+        QString     text;
     };
-    ListChunk list;
-    static const int labelHeaderLength = chunkLength + sizeof(quint32);
-    static const int labeledTextBodyLength = sizeof(LabeledTextChunk) - sizeof(LabelChunk);
+    struct NoteChunk : LabelChunk {}; // "note"
+    //mark's description lists
+    QVector<LabelChunk> listLabels;
+    QVector<NoteChunk>  listNotes;
+    QVector<LabeledTextChunk> listLtxt;
 };
 
 #endif // WAVEFILE_H
