@@ -55,8 +55,9 @@ private:
     uchar freqMarkMinSpacer;
     double sndFileTime;
     quint16 sndFileFrequency;
-    QGraphicsScene* scene;
-    QPainter* painter;
+    QGraphicsScene *scene;
+    QPainter *painter;
+    WaveFile *file;
     static QColor colorMin;
     static QColor colorMax;
     static QColor colorOverflow;

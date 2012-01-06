@@ -42,6 +42,7 @@ FormRespect::FormRespect(QWidget *parent) :
     painter = new QPainter();
     scene = 0;
 
+    file = 0;
     sndFileTime = 0.;
     sndFileFrequency = 0;
     ui->view->setMaxTime(0);
@@ -59,6 +60,7 @@ FormRespect::~FormRespect()
     delete ui;
     delete scene;
     delete painter;
+    delete file;
 }
 
 void FormRespect::setupView(const QImage &image)
@@ -75,8 +77,12 @@ void FormRespect::setupView(const QImage &image)
 
 void FormRespect::setupView(const QString &filePath)
 {
-    WaveFile file(filePath,this);
-    setupView(&file);
+    if (file != 0) {
+        delete file;
+        file = 0;
+    }
+    file = new WaveFile(filePath,this);
+    setupView(file);
 }
 
 void FormRespect::setupView(WaveFile *file)

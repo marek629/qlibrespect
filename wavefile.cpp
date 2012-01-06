@@ -152,9 +152,9 @@ qint64 WaveFile::readCue() {
         //chunk List was readed wholly proper, looking for rest of cue chank's
         Chunk temp; //temporary chunk
         //data list's
-        listLabels.clear();
-        listNotes.clear();
-        listLtxt.clear();
+        listLabels_.clear();
+        listNotes_.clear();
+        listLtxt_.clear();
         while(!atEnd())
         {
             //looking for chunk begining
@@ -180,7 +180,7 @@ qint64 WaveFile::readCue() {
                     delete tempChar;
                     qDebug() << "ltxt text: " << ltxt.text;
                 }
-                listLtxt.append(ltxt); // adding readed chunk to list
+                listLtxt_.append(ltxt); // adding readed chunk to list
             }
             else if (memcmp(temp.id,"labl",4) == 0)
             {
@@ -197,7 +197,7 @@ qint64 WaveFile::readCue() {
                     delete tempChar;
                     qDebug() << "label text: " << label.text;
                 }
-                listLabels.append(label);
+                listLabels_.append(label);
             }
             else if (memcmp(temp.id,"note",4) == 0)
             {
@@ -214,7 +214,7 @@ qint64 WaveFile::readCue() {
                     delete tempChar;
                     qDebug() << "note text: " << note.text;
                 }
-                listNotes.append(note);
+                listNotes_.append(note);
             }
         }
         return result; //and of file, returning
