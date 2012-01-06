@@ -125,7 +125,7 @@ qint64 WaveFile::readCue() {
         }
         result += read(reinterpret_cast<char *>(&cue.numCuePoints), sizeof(cue.numCuePoints));
         cue.list.resize(cue.numCuePoints);
-        for (qint32 i=0; i<cue.numCuePoints; i++) {
+        for (quint32 i=0; i<cue.numCuePoints; i++) {
             result += read(reinterpret_cast<char *>(&cue.list[i]), cuePointLength);
         }
         qDebug() << "Cue Point count:" << cue.numCuePoints;
@@ -157,39 +157,64 @@ qint64 WaveFile::readCue() {
         listLtxt.clear();
         while(!atEnd())
         {
+            //looking for chunk begining
+            //reading 1 byte loop until first byte of id is not "/0"
+            do
+                result += read(reinterpret_cast<char *>(&temp),1);
+            while(temp.id[0] == 0);
+            // reading rest of chunk
+            seek(pos()-1); // withdrawing read positnion by 1 byte
             result += read(reinterpret_cast<char *>(&temp),sizeof(temp));
             if (memcmp(temp.id,"ltxt",4) == 0)
             {
                 LabeledTextChunk ltxt;
                 result += read(reinterpret_cast<char *>(&ltxt),sizeof(ltxt)-sizeof(ltxt.text));
                 ltxt.text.clear();
-                int sizeOfText = (int)temp.size - sizeof(ltxt) + sizeof(ltxt.text); // size of text stored in chunk
-                ltxt.text.reserve(sizeOfText);
-                result += read(reinterpret_cast<char *>(&ltxt.text),sizeOfText); // it will work ?
-                listLtxt.append(ltxt);
-                qDebug() << "ltxt text: " << ltxt.text;
+                quint32 sizeOfText = temp.size - (quint32)sizeof(ltxt) + (quint32)sizeof(ltxt.text); // size of text stored in chunk
+                if (sizeOfText != 0)
+                {
+                    ltxt.text.reserve(sizeOfText); // reserving nessesery size for text
+                    char *tempChar = new char[sizeOfText]; //templorary char table for text
+                    result += read(tempChar,sizeOfText); // reading text
+                    ltxt.text = tempChar;
+                    delete tempChar;
+                    qDebug() << "ltxt text: " << ltxt.text;
+                }
+                listLtxt.append(ltxt); // adding readed chunk to list
             }
             else if (memcmp(temp.id,"labl",4) == 0)
             {
                 LabelChunk label;
                 result += read(reinterpret_cast<char *>(&label.cuePointID),sizeof(label.cuePointID));
                 label.text.clear();
-                int sizeOfText = (int)temp.size - sizeof(label) + sizeof(label.text); // size of text stored in chunk
-                label.text.reserve(sizeOfText);
-                result += read(reinterpret_cast<char *>(&label.text),sizeOfText); // its working ? i dont think so..
+                quint32 sizeOfText = temp.size - (quint32)sizeof(label) + (quint32)sizeof(label.text); // size of text stored in chunk
+                if (sizeOfText != 0)
+                {
+                    label.text.reserve(sizeOfText);
+                    char *tempChar = new char[sizeOfText];
+                    result += read(tempChar,sizeOfText);
+                    label.text = tempChar;
+                    delete tempChar;
+                    qDebug() << "label text: " << label.text;
+                }
                 listLabels.append(label);
-                qDebug() << "label text: " << label.text;   //program crash here
             }
             else if (memcmp(temp.id,"note",4) == 0)
             {
                 NoteChunk note;
                 result += read(reinterpret_cast<char *>(&note.cuePointID),sizeof(note.cuePointID));
                 note.text.clear();
-                int sizeOfText = (int)temp.size - sizeof(note) + sizeof(note.text); // size of text stored in chunk
-                note.text.reserve(sizeOfText);
-                result += read(reinterpret_cast<char *>(&note.text),sizeOfText);
+                quint32 sizeOfText = temp.size - (quint32)sizeof(note) + (quint32)sizeof(note.text); // size of text stored in chunk
+                if (sizeOfText != 0)
+                {
+                    note.text.reserve(sizeOfText);
+                    char *tempChar = new char[sizeOfText];
+                    result += read(tempChar,sizeOfText);
+                    note.text = tempChar;
+                    delete tempChar;
+                    qDebug() << "note text: " << note.text;
+                }
                 listNotes.append(note);
-                qDebug() << "note text: " << note.text;
             }
         }
         return result; //and of file, returning

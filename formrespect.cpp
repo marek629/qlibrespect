@@ -131,9 +131,11 @@ void FormRespect::setupView(WaveFile *file)
         for (quint16 j=0, k=halfBufferSize-1; j<halfBufferSize; j++, k--)
             setPixel(&image,arrayFFT[j],i,k);
     }
-
     qDebug() << "Readed data bytes:" << readedBytes;
-    file->readCue();
+
+    //decryption of marks reading sector
+    readedBytes = file->readCue();
+    qDebug() << "Readed cue bytes:" << readedBytes;
 
     setupView(image);
     if (!open)

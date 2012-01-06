@@ -9,7 +9,7 @@ CONFIG += debug
 
 TARGET = qLibReSpect
 TEMPLATE = app
-LIBS += -L../respect-build-desktop-Qt_in_PATH_Release\
+LIBS += -LC:\Users\Art\Documents\PROJEKTY\C++\marek629-librespect\release \
        # -R../respect-build-desktop\
         -lrespect
 
@@ -30,8 +30,8 @@ FORMS += \
     formrespect.ui \
     mainwindow.ui
 
-INCLUDEPATH += $$PWD/../respect
-DEPENDPATH += $$PWD/../respect-build-desktop-Qt_in_PATH_Release
+INCLUDEPATH += C:\Users\Art\Documents\PROJEKTY\C++\marek629-librespect
+DEPENDPATH += C:\Users\Art\Documents\PROJEKTY\C++\marek629-librespect\release
 
 OTHER_FILES += \
     TODO
