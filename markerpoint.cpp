@@ -9,11 +9,6 @@ MarkerPoint::MarkerPoint(GraphicsView *parent) : QPoint()
     view = parent;
 }
 
-MarkerPoint::MarkerPoint(int x, int y, GraphicsView *parent) : QPoint(x,y)
-{
-    view = parent;
-}
-
 MarkerPoint::MarkerPoint(double time, int freq, GraphicsView *parent) : QPoint()
 {
     view = parent;

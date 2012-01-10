@@ -3,6 +3,7 @@
 
 #include <QFile>
 #include <QVector>
+#include "markerpoint.h"
 
 // Wave file access class (read only yet)
 class WaveFile : public QFile
@@ -88,11 +89,6 @@ public:
         QString     text;
     };
     struct NoteChunk : LabelChunk {}; // "note"
-private:
-    //mark's description lists
-    QVector<LabelChunk> listLabels_;
-    QVector<NoteChunk>  listNotes_;
-    QVector<LabeledTextChunk> listLtxt_;
 
 public:
     // Constructors
@@ -105,7 +101,7 @@ public:
     // Read sound data maximum bufferSize bytes from channel channelId into buffer
     qint64 readData(double *buffer, int bufferSize, int channelId = 0);
     // Read cue chunk. It should call after reading last byte in data chunk
-    qint64 readCue();
+    qint64 readCue(QVector<MarkerPoint> &markers);
     // Return number of bytes per sample in the file
     int bytesPerSample() const { return header.wave.bitsPerSample / 8; }
     // Return end of data chunk position in the file
@@ -119,11 +115,6 @@ public:
     int maxFrequency() const { return header.wave.sampleRate * 0.5; }
     // Return time value in seconds of the file
     double realTime() const { return (double) header.data.descriptor.size / header.wave.byteRate; }
-
-    // Return pointers to list of markers data
-    QVector<WaveFile::LabelChunk> *listLabels() { return &listLabels_; }
-    QVector<WaveFile::NoteChunk>  *listNotes() { return &listNotes_; }
-    QVector<WaveFile::LabeledTextChunk> *listLtxt() { return &listLtxt_; }
 
     // virtual methods interided from QFile
     virtual bool atEnd() const { return QFile::atEnd(); }

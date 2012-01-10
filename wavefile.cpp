@@ -111,7 +111,7 @@ qint64 WaveFile::readData(double *buffer, int bufferSize, int channelId) {
     return result;
 }
 
-qint64 WaveFile::readCue() {
+qint64 WaveFile::readCue(QVector<MarkerPoint> &markers) {
     cue.numCuePoints = 0;
     cue.descriptor.size = 0;
     if (atEnd())
@@ -151,13 +151,18 @@ qint64 WaveFile::readCue() {
         }
         //chunk List was readed wholly proper, looking for rest of cue chank's
         Chunk temp; //temporary chunk
-        //data list's
+
+        //mark's description lists
+        QVector<LabelChunk> listLabels_;
+        QVector<NoteChunk>  listNotes_;
+        QVector<LabeledTextChunk> listLtxt_;
+
         listLabels_.clear();
         listNotes_.clear();
         listLtxt_.clear();
         while(!atEnd())
         {
-            //looking for chunk begining
+            //laooking for chunk begining
             //reading 1 byte loop until first byte of id is not "/0"
             do
                 result += read(reinterpret_cast<char *>(&temp),1);
@@ -216,6 +221,23 @@ qint64 WaveFile::readCue() {
                 }
                 listNotes_.append(note);
             }
+        }
+        // setting parameters to MarkerPoint class
+        markers.clear();
+        markers.resize(cue.numCuePoints);
+        for(int i=0; i<cue.numCuePoints;i++)
+        {
+            //setting time
+            markers[i].setTime((double)cue.list[0].sampleOffset/header.wave.byteRate);
+            //setting text
+            QString temp = "";
+            if (!listLtxt_.isEmpty())
+                temp += listLtxt_[i].text+ "\n";
+            if (!listLabels_.isEmpty())
+                temp += listLabels_[i].text+ "\n";
+            if (!listNotes_.isEmpty())
+                temp += listNotes_[i].text + "\n";
+            markers[i].setString(temp);
         }
         return result; //and of file, returning
     }

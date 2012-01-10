@@ -140,7 +140,8 @@ void FormRespect::setupView(WaveFile *file)
     qDebug() << "Readed data bytes:" << readedBytes;
 
     //decryption of marks reading sector
-    readedBytes = file->readCue();
+    readedBytes = file->readCue(markers);
+
     qDebug() << "Readed cue bytes:" << readedBytes;
 
     setupView(image);
@@ -232,7 +233,31 @@ void FormRespect::paintEvent(QPaintEvent *)
     painter->drawLine(timeAxisStopX,timeAxisY,timeAxisStopX,timeMarkEndY);
     painter->drawText(timeAxisStopX-40,timeMarkEndY+14,QString::number(timeMaxValue,'f',3));
 
-
+    // markers
+    double timePerPixel = (timeAxisStopX-timeAxisStartX)/(timeMaxValue-timeMinValue);
+    int pixelOffset = ui->view->mapToScene(ui->view->viewport()->rect().bottomLeft()).x();
+    int i = 0;
+    QGraphicsScene scene;
+    while(i < markers.count())
+    {
+        QPointF triangle[3];
+        //top vertex
+        triangle[0].setX((markers[i].time()*timePerPixel)+timeAxisStartX-pixelOffset);
+        triangle[0].setY((qreal)timeAxisY);
+        //left bot vertex
+        triangle[1].setX((markers[i].time()*timePerPixel)+timeAxisStartX-5-pixelOffset);
+        triangle[1].setY((qreal)timeAxisY+10);
+        //right bot vertex
+        triangle[2].setX((markers[i].time()*timePerPixel)+timeAxisStartX+5-pixelOffset);
+        triangle[2].setY((qreal)timeAxisY+10);
+        //painter->drawPolygon(triangle,3);
+        QPolygonF polygon;
+        polygon << triangle[0] <<triangle[1] << triangle[2];
+        scene.addPolygon(polygon,pen,QBrush(Qt::red));
+        i++;
+    }
+    scene.activeWindow();
+    scene.update();
     // ending
     painter->end();
 }
@@ -331,4 +356,9 @@ void FormRespect::setColorMax(const QString &name)
 void FormRespect::setColorOverflow(const QString &name)
 {
     colorOverflow = QColor(name);
+}
+
+void FormRespect::addMarker()
+{
+
 }

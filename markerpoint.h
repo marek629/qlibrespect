@@ -11,24 +11,27 @@ class MarkerPoint : public QPoint
 {
 public:
     MarkerPoint(GraphicsView *parent = 0);
-    MarkerPoint(int x, int y, GraphicsView *parent = 0);
     MarkerPoint(double time, int freq, GraphicsView *parent = 0);
     MarkerPoint(double time, int freq, const QString &str, GraphicsView *parent = 0);
-    void setString(const QString&);
+    MarkerPoint(double time, GraphicsView *parent = 0);
+    void setString(const QString &v);
     const QString &string() const { return str; }
+    void setTime(double time) {time_ =time;}
     double time() const { return time_; }
     int freq() const { return freq_; }
     void refresh();
+    bool isSelected() {return selected;}
+    void setSelected(bool select = true) {selected = select;}
     static void setMaxX(int);
     static void setMaxY(int);
 private:
     GraphicsView *view;
-//    QGraphicsEllipseItem *itemPtr;
-    QString str;
-    double time_;
-    int freq_;
-    static int maxX;
-    static int maxY;
+    QString str; //text stored in mark
+    double time_; //x cordinat in seconds
+    int freq_; //y cordintas in Hz
+    static int maxX; //max length x axes
+    static int maxY; //max hight y axes
+    bool selected;
 };
 
 #endif // MARKERPOINT_H

@@ -4,6 +4,7 @@
 #include <QWidget>
 
 #include "ui_formrespect.h"
+#include "markerpoint.h"
 
 class QGraphicsScene;
 class GraphicsView;
@@ -35,6 +36,9 @@ public:
     static void setColorMin(const QString &name);
     static void setColorMax(const QString &name);
     static void setColorOverflow(const QString &name);
+    // Create/refresh marker
+    void addMarker(); // ???
+    void updateMarkers();
 
 protected:
     virtual void resizeEvent(QResizeEvent *);
@@ -66,7 +70,8 @@ private:
     // Set pixel color in image coordinates x, y to i value
     // i value should vary in the range 0.0 to 1.0, if i > 1.0 sets colorOverflow
     void setPixel(QImage *image, double i, int x, int y);
-
+    // Markers map
+    QVector<MarkerPoint> markers;
 
 public slots:
     void save(const QString &);
