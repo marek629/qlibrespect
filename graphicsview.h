@@ -17,8 +17,6 @@ public:
     void setPixmap(QPixmap pixmap);
     // Returns pointer to plot pixmap item
     QGraphicsPixmapItem* pixmapItem() const { return graphicsPixmapItem; }
-    // Returns reference to map containig pointer to graphics view's item and marker point object
-    const QMap<QGraphicsItem*,MarkerPoint> &markerMap() const { return markerPointMap; }
     // Set time length of wave file in seconds
     void setMaxTime(double);
     // Set maximum frequency value in Hz witch it can be in wave file
@@ -28,9 +26,9 @@ public:
     // Returns maximum frequency value in Hz witch it can be in wave file
     int maxFreq() const { return fileFreq; }
     // Removes marker item from this object and returns removed marker point object
-    MarkerPoint removeItem(QGraphicsItem *itemPtr);
-    // Adds marker into this object coresponding with MarkerPoint object marker data and radius size
-    QGraphicsItem *addItem(const MarkerPoint &marker, uchar radius = markerPointRadius);
+    void addMarker(MarkerPoint &marker);
+    void addMarkers(QVector<MarkerPoint> &markers);
+    void delMarker(MarkerPoint &marker);
 
 protected:
     virtual void wheelEvent(QWheelEvent *event);
@@ -63,10 +61,6 @@ private:
     bool keyCtrlPressed;
     QPixmap pixmap;
     QGraphicsPixmapItem* graphicsPixmapItem;
-    QMap<QGraphicsItem*,MarkerPoint> markerPointMap;
-    QGraphicsItem* selectedMarker;
-    static const uchar markerPointRadius = 5;
-    static const uchar markerPointSelectedRadius = 2.4 * markerPointRadius;
 
     void scalePixmap();
 

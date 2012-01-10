@@ -25,7 +25,6 @@ GraphicsView::GraphicsView(QWidget* parent) : QGraphicsView(parent)
     mouseLeftPressed = false;
     keyCtrlPressed = false;
     graphicsPixmapItem = 0;
-    selectedMarker = 0;
 }
 
 void GraphicsView::setPixmap(QPixmap pxm)
@@ -50,21 +49,6 @@ void GraphicsView::scalePixmap()
     graphicsPixmapItem = this->scene()->addPixmap(
                 pixmap.scaled(w,h,Qt::IgnoreAspectRatio,Qt::SmoothTransformation) );
     this->scene()->setSceneRect(0,0,w,h);
-
-    QMap<QGraphicsItem*,MarkerPoint> tempMap (markerPointMap);
-    markerPointMap.clear();
-    MarkerPoint::setMaxX( sceneRect().width() );
-    MarkerPoint::setMaxY( sceneRect().height() );
-    MarkerPoint marker;
-    foreach (marker,tempMap)
-    {
-        bool selected = ( tempMap.key(marker) == selectedMarker );
-        marker.refresh();
-        if (selected)
-            selectedMarker = addItem(marker, markerPointSelectedRadius);
-        else
-            addItem(marker, markerPointRadius);
-    }
 
     this->update();
     emit pixmapChanged();
@@ -115,44 +99,6 @@ void GraphicsView::mouseMoveEvent(QMouseEvent *event)
 void GraphicsView::mousePressEvent(QMouseEvent *event)
 {
     QGraphicsItem* itemPtr = scene()->itemAt( mapToScene( event->pos() ) );
-    if (event->button() == Qt::RightButton)
-    {   // remove marker
-        mouseRightPressed = true;
-
-        if (itemPtr != (QGraphicsItem*)graphicsPixmapItem)
-            removeItem(itemPtr);
-    }
-    else if (event->button() == Qt::LeftButton)
-    {
-        mouseLeftPressed = true;
-        mousePosition = event->globalPos();
-
-        if (itemPtr != (QGraphicsItem*)graphicsPixmapItem)
-        {
-            if (itemPtr == selectedMarker)
-            {   // unselect marker
-                MarkerPoint marker = removeItem(itemPtr);
-                addItem(marker, markerPointRadius);
-                selectedMarker = 0;
-                emit selectedItemChanged( helpString );
-            }
-            else
-            {   // select marker
-                if (selectedMarker != 0)
-                {   // unselect other marker
-                    MarkerPoint mrk = removeItem(selectedMarker);
-                    addItem(mrk, markerPointRadius);
-                }
-                QMap<QGraphicsItem*,MarkerPoint>::iterator i = markerPointMap.find(itemPtr);
-                MarkerPoint marker = i.value();
-                scene()->removeItem(itemPtr);
-                markerPointMap.erase(i);
-                itemPtr = addItem(marker, markerPointSelectedRadius);
-                selectedMarker = itemPtr;
-                emit selectedItemChanged( marker.string() );
-            }
-        }
-    }
 }
 
 void GraphicsView::mouseReleaseEvent(QMouseEvent *)
@@ -163,15 +109,7 @@ void GraphicsView::mouseReleaseEvent(QMouseEvent *)
 
 void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
 {
-    QPointF scenePoint = mapToScene( event->pos() );
-    QGraphicsItem* itemPtr = scene()->itemAt(scenePoint);
-    if ( itemPtr == (QGraphicsItem*)graphicsPixmapItem )
-    {
-        double t = fileTime * scenePoint.x() / sceneRect().width();
-        int f = fileFreq * ( sceneRect().height() - scenePoint.y() ) / sceneRect().height();
-        MarkerPoint marker(t,f,this);
-        addItem(marker, markerPointRadius);
-    }
+
 }
 
 void GraphicsView::keyPressEvent(QKeyEvent *event)
@@ -222,27 +160,6 @@ void GraphicsView::setMaxFreq(int v)
     fileFreq = v;
 }
 
-MarkerPoint GraphicsView::removeItem(QGraphicsItem *itemPtr)
-{
-    MarkerPoint marker = markerPointMap.value(itemPtr);
-    scene()->removeItem(itemPtr);
-    markerPointMap.erase( markerPointMap.find(itemPtr) );
-    return marker;
-}
-
-QGraphicsItem * GraphicsView::addItem(const MarkerPoint &marker, uchar radius)
-{
-    uchar diameter = 2 * radius;
-    QGraphicsItem *itemPtr = (QGraphicsItem*)
-            scene()->addEllipse( marker.x()-radius, marker.y()-radius,
-                                 diameter, diameter, QPen(), QBrush(Qt::red) );
-    markerPointMap.insert(itemPtr,marker);
-    QString tip = tr("Time: ") + QString::number(marker.time(),'g',3) + " s\n" +
-                  tr("Frequency: ") + QString::number(marker.freq()) + " Hz";
-    itemPtr->setToolTip(tip);
-    return itemPtr;
-}
-
 void GraphicsView::selectedTextChanged()
 {
     static QString lastText;
@@ -253,13 +170,22 @@ void GraphicsView::selectedTextChanged()
     {
         if (txt != helpString)
         {
-            MarkerPoint marker = removeItem(selectedMarker);
-            marker.setString(txt);
-            selectedMarker = addItem(marker, markerPointSelectedRadius);
-            textEdit->setReadOnly(false);
+
         }
         else
             textEdit->setReadOnly(true);
         lastText = txt;
     }
+}
+
+void GraphicsView::addMarker(MarkerPoint &marker)
+{
+    double offsetX = (this->scene()->width() / fileTime) * marker.time();
+    this->scene()->addLine(offsetX,0,offsetX,this->height(),QPen(Qt::red));
+}
+
+void GraphicsView::addMarkers(QVector<MarkerPoint> &markers)
+{
+    for(int i =0; i<markers.count();i++)
+        addMarker(markers[i]);
 }

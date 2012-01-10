@@ -74,7 +74,7 @@ void FormRespect::setupView(const QImage &image)
     scene = new QGraphicsScene();
     ui->view->setScene(scene);
     ui->view->setPixmap(QPixmap::fromImage(image));
-    ui->view->setMarkers(markers);
+    ui->view->addMarkers(markers);
 }
 
 void FormRespect::setupView(const QString &filePath)
@@ -142,7 +142,7 @@ void FormRespect::setupView(WaveFile *file)
     qDebug() << "Readed data bytes:" << readedBytes;
 
     //decryption of marks reading sector
-    readedBytes = file->readCue(markers);
+    readedBytes = file->readCue(markers);    
 
     qDebug() << "Readed cue bytes:" << readedBytes;
 
@@ -162,7 +162,8 @@ void FormRespect::resizeEvent(QResizeEvent *)
 
     timeAxisY = h + AXIS_MARGIN;
 
-    ui->view->resize(w,h);
+    ui->view->resize(w,h);    
+    ui->view->addMarkers(markers);
 }
 
 void FormRespect::paintEvent(QPaintEvent *)
@@ -281,13 +282,13 @@ void FormRespect::save(const QString &path)
         QMessageBox::critical(this, tr("Save failed"), tr("File open to write failed."));
         return;
     }
-    QDataStream out(&file);
-    out.setVersion(QDataStream::Qt_4_6);
-    out << view()->markerMap().size();
-    foreach (MarkerPoint marker, view()->markerMap())
-    {
-        out << marker.time() << marker.string();
-    }
+//    QDataStream out(&file);
+//    out.setVersion(QDataStream::Qt_4_6);
+//    out << view()->markerMap().size();
+//    foreach (MarkerPoint marker, view()->markerMap())
+//    {
+//        out << marker.time() << marker.string();
+//    }
 }
 
 void FormRespect::saveAs()
@@ -310,12 +311,12 @@ void FormRespect::load(const QString &path)
     in >> size;
     double time;
     int freq;
-    QString string;
-    for (int i=0; i<size; i++)
-    {
-        in >> time >> freq >> string;
-        view()->addItem( MarkerPoint(time,freq,string,view()) );
-    }
+//    QString string;
+//    for (int i=0; i<size; i++)
+//    {
+//        in >> time >> freq >> string;
+//        view()->addItem( MarkerPoint(time,freq,string,view()) );
+//    }
 }
 
 void FormRespect::loadFrom()
