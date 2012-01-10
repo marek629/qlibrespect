@@ -228,7 +228,7 @@ qint64 WaveFile::readCue(QVector<MarkerPoint> &markers) {
         for(int i=0; i<cue.numCuePoints;i++)
         {
             //setting time
-            markers[i].setTime((double)cue.list[0].sampleOffset/header.wave.byteRate);
+            markers[i].setTime((double)cue.list[i].sampleOffset/header.wave.byteRate);
             //setting text
             QString temp = "";
             if (!listLtxt_.isEmpty())

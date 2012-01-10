@@ -37,7 +37,8 @@ public:
     static void setColorMax(const QString &name);
     static void setColorOverflow(const QString &name);
     // Create/refresh marker
-    void addMarker(); // ???
+    void addMarker(MarkerPoint &); // ???
+    void delMarker(MarkerPoint &);
     void updateMarkers();
 
 protected:

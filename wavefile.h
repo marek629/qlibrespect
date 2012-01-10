@@ -10,6 +10,42 @@ class WaveFile : public QFile
 {
     Q_OBJECT
 
+public:
+    // Constructors
+    WaveFile(QObject *parent = 0);
+    WaveFile(const QString& name);
+    WaveFile(const QString &name, QObject *parent);
+    // Read header up to data chunk including header fo data chunk
+    // After use this function file is seeked to first byte of sound data
+    qint64 readHeader();
+    // Read sound data maximum bufferSize bytes from channel channelId into buffer
+    qint64 readData(double *buffer, int bufferSize, int channelId = 0);
+    // Read cue chunk. It should call after reading last byte in data chunk
+    qint64 readCue(QVector<MarkerPoint> &markers);
+    // Return number of bytes per sample in the file
+    int bytesPerSample() const { return header.wave.bitsPerSample / 8; }
+    // Return end of data chunk position in the file
+    int posDataEnd() const { return dataOffset + header.data.descriptor.size; }
+    // Return number of channels in the file
+    int numChannels() const { return header.wave.numChannels; }
+    // Return number of samples in the file
+    int numSamples() const { return  header.data.descriptor.size /
+                (header.wave.bitsPerSample/8) / header.wave.numChannels; }
+    // Return maximum frequency value in Hz witch it can be in the file
+    int maxFrequency() const { return header.wave.sampleRate * 0.5; }
+    // Return time value in seconds of the file
+    double realTime() const { return (double) header.data.descriptor.size / header.wave.byteRate; }
+
+    // virtual methods interided from QFile
+    virtual bool atEnd() const { return QFile::atEnd(); }
+    virtual void close() { QFile::close(); }
+    virtual bool isSequential() const { return QFile::isSequential(); }
+    virtual bool open(OpenMode flags);
+    virtual qint64 pos() const { return QFile::pos(); }
+    virtual bool seek(qint64 offset);
+    virtual qint64 size() const { return QFile::size(); }
+
+private:
     bool isFirstSample;
     struct Chunk
     {
@@ -69,6 +105,7 @@ class WaveFile : public QFile
         Chunk       descriptor;
         char        typeID[4];
     };
+
 public:
     struct LabeledTextChunk // "ltxt"
     {
@@ -90,40 +127,6 @@ public:
     };
     struct NoteChunk : LabelChunk {}; // "note"
 
-public:
-    // Constructors
-    WaveFile(QObject *parent = 0);
-    WaveFile(const QString& name);
-    WaveFile(const QString &name, QObject *parent);
-    // Read header up to data chunk including header fo data chunk
-    // After use this function file is seeked to first byte of sound data
-    qint64 readHeader();
-    // Read sound data maximum bufferSize bytes from channel channelId into buffer
-    qint64 readData(double *buffer, int bufferSize, int channelId = 0);
-    // Read cue chunk. It should call after reading last byte in data chunk
-    qint64 readCue(QVector<MarkerPoint> &markers);
-    // Return number of bytes per sample in the file
-    int bytesPerSample() const { return header.wave.bitsPerSample / 8; }
-    // Return end of data chunk position in the file
-    int posDataEnd() const { return dataOffset + header.data.descriptor.size; }
-    // Return number of channels in the file
-    int numChannels() const { return header.wave.numChannels; }
-    // Return number of samples in the file
-    int numSamples() const { return  header.data.descriptor.size /
-                (header.wave.bitsPerSample/8) / header.wave.numChannels; }
-    // Return maximum frequency value in Hz witch it can be in the file
-    int maxFrequency() const { return header.wave.sampleRate * 0.5; }
-    // Return time value in seconds of the file
-    double realTime() const { return (double) header.data.descriptor.size / header.wave.byteRate; }
-
-    // virtual methods interided from QFile
-    virtual bool atEnd() const { return QFile::atEnd(); }
-    virtual void close() { QFile::close(); }
-    virtual bool isSequential() const { return QFile::isSequential(); }
-    virtual bool open(OpenMode flags);
-    virtual qint64 pos() const { return QFile::pos(); }
-    virtual bool seek(qint64 offset);
-    virtual qint64 size() const { return QFile::size(); }
 };
 
 #endif // WAVEFILE_H

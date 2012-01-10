@@ -12,6 +12,7 @@
 #define AXIS_MARGIN 5
 #define AXIS_MARK_LENGTH 3
 #define AXIS_WIDTH 2
+#define SCROLLBAR_SIZE 20
 
 QColor FormRespect::colorMin (Qt::black);
 QColor FormRespect::colorMax (Qt::green);
@@ -30,7 +31,7 @@ FormRespect::FormRespect(QWidget *parent) :
 
     timeAxisSpace = this->height() - ui->view->height() - ui->view->y();
     timeAxisY = this->height() - timeAxisSpace + AXIS_MARGIN;
-    timeAxisStartX = ui->view->x();
+    timeAxisStartX = ui->view->x() + SCROLLBAR_SIZE;
     timeMarkMinSpacer = 250;
 
     freqAxisSpace = ui->view->x();
@@ -73,6 +74,7 @@ void FormRespect::setupView(const QImage &image)
     scene = new QGraphicsScene();
     ui->view->setScene(scene);
     ui->view->setPixmap(QPixmap::fromImage(image));
+    ui->view->setMarkers(markers);
 }
 
 void FormRespect::setupView(const QString &filePath)
@@ -207,7 +209,7 @@ void FormRespect::paintEvent(QPaintEvent *)
 
 
     // drawing markers by time axis
-    timeAxisStopX = timeAxisStartX + ui->view->width() - AXIS_WIDTH/2;
+    timeAxisStopX = timeAxisStartX + ui->view->width() - AXIS_WIDTH/2 - SCROLLBAR_SIZE;
     double timeMarksCount = (double) (timeAxisStopX - timeAxisStartX) / timeMarkMinSpacer;
     uchar iTimeMarksCount = (uchar) timeMarksCount;
     uchar timeModulo = (timeMarksCount - iTimeMarksCount) * timeMarkMinSpacer;
@@ -237,12 +239,13 @@ void FormRespect::paintEvent(QPaintEvent *)
     double timePerPixel = (timeAxisStopX-timeAxisStartX)/(timeMaxValue-timeMinValue);
     int pixelOffset = ui->view->mapToScene(ui->view->viewport()->rect().bottomLeft()).x();
     int i = 0;
-    QGraphicsScene scene;
     while(i < markers.count())
     {
         QPointF triangle[3];
+        QPolygonF poligon;
         //top vertex
-        triangle[0].setX((markers[i].time()*timePerPixel)+timeAxisStartX-pixelOffset);
+        markers[i].setX((markers[i].time()*timePerPixel)+timeAxisStartX-pixelOffset);
+        triangle[0].setX(markers[i].x());
         triangle[0].setY((qreal)timeAxisY);
         //left bot vertex
         triangle[1].setX((markers[i].time()*timePerPixel)+timeAxisStartX-5-pixelOffset);
@@ -250,14 +253,12 @@ void FormRespect::paintEvent(QPaintEvent *)
         //right bot vertex
         triangle[2].setX((markers[i].time()*timePerPixel)+timeAxisStartX+5-pixelOffset);
         triangle[2].setY((qreal)timeAxisY+10);
-        //painter->drawPolygon(triangle,3);
-        QPolygonF polygon;
-        polygon << triangle[0] <<triangle[1] << triangle[2];
-        scene.addPolygon(polygon,pen,QBrush(Qt::red));
+        QPainterPath tmpPath;
+        poligon << triangle[0] << triangle[1] << triangle[2];
+        tmpPath.addPolygon(poligon);
+        painter->fillPath(tmpPath,QBrush(Qt::red));
         i++;
     }
-    scene.activeWindow();
-    scene.update();
     // ending
     painter->end();
 }
@@ -285,7 +286,7 @@ void FormRespect::save(const QString &path)
     out << view()->markerMap().size();
     foreach (MarkerPoint marker, view()->markerMap())
     {
-        out << marker.time() << marker.freq() << marker.string();
+        out << marker.time() << marker.string();
     }
 }
 
@@ -358,7 +359,11 @@ void FormRespect::setColorOverflow(const QString &name)
     colorOverflow = QColor(name);
 }
 
-void FormRespect::addMarker()
+void FormRespect::addMarker(MarkerPoint &v)
 {
-
+    markers.append(v);
+}
+void FormRespect::delMarker(MarkerPoint &v)
+{
+    markers.remove(markers.indexOf(v,0));
 }
