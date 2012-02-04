@@ -25,9 +25,6 @@ FormRespect::FormRespect(QWidget *parent) :
     ui(new Ui::FormRespect)
 {
     ui->setupUi(this);
-    ui->view->setLayoutDirection(Qt::RightToLeft);
-    ui->view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-    ui->view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
     timeAxisSpace = this->height() - ui->view->height() - ui->view->y();
     timeAxisY = this->height() - timeAxisSpace + AXIS_MARGIN;
@@ -46,8 +43,6 @@ FormRespect::FormRespect(QWidget *parent) :
     file = 0;
     sndFileTime = 0.;
     sndFileFrequency = 0;
-    ui->view->setMaxTime(0);
-    ui->view->setMaxFreq(0);
 
     setupView();
 
@@ -278,14 +273,6 @@ void FormRespect::load(const QString &path)
     in.setVersion(QDataStream::Qt_4_6);
     int size;
     in >> size;
-    double time;
-    int freq;
-//    QString string;
-//    for (int i=0; i<size; i++)
-//    {
-//        in >> time >> freq >> string;
-//        view()->addItem( MarkerPoint(time,freq,string,view()) );
-//    }
 }
 
 void FormRespect::loadFrom()

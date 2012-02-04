@@ -19,12 +19,17 @@ const QString helpString = QObject::tr("Usage:\n\n"
 
 GraphicsView::GraphicsView(QWidget* parent) : QGraphicsView(parent)
 {
+    this->setLayoutDirection(Qt::RightToLeft);
+    this->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    this->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
     freqZoomFactor = 1.0;
     timeZoomFactor = 1.0;
     mouseRightPressed = false;
     mouseLeftPressed = false;
     keyCtrlPressed = false;
     graphicsPixmapItem = 0;
+    setMaxTime(0);
+    setMaxFreq(0);
 }
 
 void GraphicsView::setPixmap(QPixmap pxm)
