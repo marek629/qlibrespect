@@ -84,34 +84,6 @@ void GraphicsView::wheelEvent(QWheelEvent *event)
               positionOnScene.y() + i * cursorPosition.y() );
 }
 
-void GraphicsView::mouseMoveEvent(QMouseEvent *event)
-{
-    if (mouseLeftPressed)
-    {
-        verticalScrollBar()->setValue( verticalScrollBar()->value() +
-                                       (mousePosition.y() - event->globalY()) );
-        horizontalScrollBar()->setValue( horizontalScrollBar()->value() -
-                                         (mousePosition.x() - event->globalX()) );
-        mousePosition = event->globalPos();
-    }
-}
-
-void GraphicsView::mousePressEvent(QMouseEvent *event)
-{
-    QGraphicsItem* itemPtr = scene()->itemAt( mapToScene( event->pos() ) );
-}
-
-void GraphicsView::mouseReleaseEvent(QMouseEvent *)
-{
-    mouseRightPressed = false;
-    mouseLeftPressed = false;
-}
-
-void GraphicsView::mouseDoubleClickEvent(QMouseEvent *event)
-{
-
-}
-
 void GraphicsView::keyPressEvent(QKeyEvent *event)
 {
     if (event->key() == Qt::Key_Control)
@@ -158,34 +130,4 @@ void GraphicsView::setMaxTime(double v)
 void GraphicsView::setMaxFreq(int v)
 {
     fileFreq = v;
-}
-
-void GraphicsView::selectedTextChanged()
-{
-    static QString lastText;
-
-    QPlainTextEdit *textEdit = (QPlainTextEdit*) sender();
-    QString txt = textEdit->toPlainText();
-    if (txt != lastText)
-    {
-        if (txt != helpString)
-        {
-
-        }
-        else
-            textEdit->setReadOnly(true);
-        lastText = txt;
-    }
-}
-
-void GraphicsView::addMarker(MarkerPoint &marker)
-{
-    double offsetX = (this->scene()->width() / fileTime) * marker.time();
-    this->scene()->addLine(offsetX,0,offsetX,this->height(),QPen(Qt::red));
-}
-
-void GraphicsView::addMarkers(QVector<MarkerPoint> &markers)
-{
-    for(int i =0; i<markers.count();i++)
-        addMarker(markers[i]);
 }

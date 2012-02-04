@@ -25,9 +25,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ploter->view(), SIGNAL(selectedItemChanged(QString)),
             ui->plainTextEdit, SLOT(setPlainText(QString)));
 
-    connect(ui->plainTextEdit, SIGNAL(textChanged()),
-            ploter->view(), SLOT(selectedTextChanged()));
-
     connect(ploter, SIGNAL(setStatusMessage(QString)),
             statusBar(), SLOT(showMessage(QString)));
 }

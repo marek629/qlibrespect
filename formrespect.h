@@ -36,10 +36,6 @@ public:
     static void setColorMin(const QString &name);
     static void setColorMax(const QString &name);
     static void setColorOverflow(const QString &name);
-    // Create/refresh marker
-    void addMarker(MarkerPoint &); // ???
-    void delMarker(MarkerPoint &);
-    void updateMarkers();
 
 protected:
     virtual void resizeEvent(QResizeEvent *);
@@ -72,7 +68,6 @@ private:
     // i value should vary in the range 0.0 to 1.0, if i > 1.0 sets colorOverflow
     void setPixel(QImage *image, double i, int x, int y);
     // Markers map
-    QVector<MarkerPoint> markers;
 
 public slots:
     void save(const QString &);
