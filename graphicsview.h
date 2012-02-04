@@ -25,10 +25,6 @@ public:
     double maxTime() const { return fileTime; }
     // Returns maximum frequency value in Hz witch it can be in wave file
     int maxFreq() const { return fileFreq; }
-    // Removes marker item from this object and returns removed marker point object
-    void addMarker(MarkerPoint &marker);
-    void addMarkers(QVector<MarkerPoint> &markers);
-    void delMarker(MarkerPoint &marker);
 
 protected:
     virtual void wheelEvent(QWheelEvent *event);
@@ -39,8 +35,6 @@ protected:
 signals:
     void pixmapChanged();
     void selectedItemChanged(const QString &);
-
-public slots:
 
 private:
     double freqZoomFactor;
