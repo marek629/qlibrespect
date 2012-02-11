@@ -57,6 +57,8 @@ private:
     double sndFileTime;
     quint16 sndFileFrequency;
     QGraphicsScene *scene;
+    QGraphicsScene *aXScene; //scene for X axis nessesery for markers
+    QGraphicsView *aXView; // view for aXScene
     QPainter *painter;
     WaveFile *file;
     static QColor colorMin;

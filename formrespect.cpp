@@ -29,7 +29,7 @@ FormRespect::FormRespect(QWidget *parent) :
     timeAxisSpace = this->height() - ui->view->height() - ui->view->y();
     timeAxisY = this->height() - timeAxisSpace + AXIS_MARGIN;
     timeAxisStartX = ui->view->x() + SCROLLBAR_SIZE;
-    timeMarkMinSpacer = 250;
+    timeMarkMinSpacer = 150;
 
     freqAxisSpace = ui->view->x();
     freqAxisX = ui->view->x() - AXIS_MARGIN;
@@ -39,6 +39,15 @@ FormRespect::FormRespect(QWidget *parent) :
 
     painter = new QPainter();
     scene = 0;
+    //creating new scene for axis X
+    aXScene = new QGraphicsScene;
+    aXView = new QGraphicsView(this);
+    aXView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    aXView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    aXView->setScene(aXScene);
+    aXView->setFrameStyle(0);
+    //aXViev->setBackgroundBrush(QBrush(QColor(Qt::blue)));
+    aXView->setStyleSheet("background: transparent");
 
     file = 0;
     sndFileTime = 0.;
@@ -57,6 +66,7 @@ FormRespect::~FormRespect()
     delete scene;
     delete painter;
     delete file;
+    if (!aXScene) delete aXScene;
 }
 
 void FormRespect::setupView(const QImage &image)
@@ -152,6 +162,8 @@ void FormRespect::resizeEvent(QResizeEvent *)
     timeAxisY = h + AXIS_MARGIN;
 
     ui->view->resize(w,h);
+    //setting size and position for axScene geometry
+    aXView->setGeometry(timeAxisStartX,h,this->width()-timeAxisStartX-1,timeAxisSpace-15);
 }
 
 void FormRespect::paintEvent(QPaintEvent *)
@@ -165,7 +177,6 @@ void FormRespect::paintEvent(QPaintEvent *)
     // drawing axes
     painter->drawLine(freqAxisX,ui->view->y(),freqAxisX,timeAxisY);
     painter->drawLine(freqAxisX,timeAxisY,freqAxisSpace+ui->view->width(),timeAxisY);
-
 
     // drawing markers by frequency axis
     freqAxisStartY = ui->view->y() + ui->view->height() - ui->view->horizontalScrollBar()->height();
@@ -195,7 +206,6 @@ void FormRespect::paintEvent(QPaintEvent *)
         painter->drawLine(freqAxisX,y,freqMarkEndX,y);
         painter->drawText(freqLabelX,y+4,QString::number(freqValue*0.001,'f',2));
     }
-
 
     // drawing markers by time axis
     timeAxisStopX = timeAxisStartX + ui->view->width() - AXIS_WIDTH/2 - SCROLLBAR_SIZE;
