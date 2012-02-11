@@ -61,6 +61,8 @@ private:
     double sndFileTime;
     quint16 sndFileFrequency;
     QGraphicsScene *scene;
+    QGraphicsScene *aXScene; //scene for X axis nessesery for markers
+    QGraphicsView *aXView; // view for aXScene
     QPainter *painter;
     WaveFile *file;
     static QColor colorMin;
@@ -73,6 +75,7 @@ private:
     void setPixel(QImage *image, double i, int x, int y);
     // Markers map
     QVector<MarkerPoint> markers;
+    QList<QGraphicsItem *> items;
 
 public slots:
     void save(const QString &);

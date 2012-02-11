@@ -25,14 +25,11 @@ FormRespect::FormRespect(QWidget *parent) :
     ui(new Ui::FormRespect)
 {
     ui->setupUi(this);
-    ui->view->setLayoutDirection(Qt::RightToLeft);
-    ui->view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-    ui->view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
 
     timeAxisSpace = this->height() - ui->view->height() - ui->view->y();
     timeAxisY = this->height() - timeAxisSpace + AXIS_MARGIN;
     timeAxisStartX = ui->view->x() + SCROLLBAR_SIZE;
-    timeMarkMinSpacer = 250;
+    timeMarkMinSpacer = 150;
 
     freqAxisSpace = ui->view->x();
     freqAxisX = ui->view->x() - AXIS_MARGIN;
@@ -42,12 +39,19 @@ FormRespect::FormRespect(QWidget *parent) :
 
     painter = new QPainter();
     scene = 0;
+    //creating new scene for axis X
+    aXScene = new QGraphicsScene;
+    aXView = new QGraphicsView(this);
+    aXView->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    aXView->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    aXView->setScene(aXScene);
+    aXView->setFrameStyle(0);
+    //aXView->setBackgroundBrush(QBrush(QColor(Qt::blue)));
+    aXView->setStyleSheet("background: transparent");
 
     file = 0;
     sndFileTime = 0.;
     sndFileFrequency = 0;
-    ui->view->setMaxTime(0);
-    ui->view->setMaxFreq(0);
 
     setupView();
 
@@ -62,6 +66,7 @@ FormRespect::~FormRespect()
     delete scene;
     delete painter;
     delete file;
+    if (!aXScene) delete aXScene;
 }
 
 void FormRespect::setupView(const QImage &image)
@@ -163,7 +168,11 @@ void FormRespect::resizeEvent(QResizeEvent *)
     timeAxisY = h + AXIS_MARGIN;
 
     ui->view->resize(w,h);    
-    ui->view->addMarkers(markers);
+    //setting size and position for axScene geometry
+    aXView->setGeometry(timeAxisStartX,timeAxisY,this->width()-timeAxisStartX,timeAxisSpace-15);
+    aXScene->setSceneRect(0,0,aXView->width(),aXView->height());
+
+    ui->view->addMarkers(markers); // painting markers on graphics
 }
 
 void FormRespect::paintEvent(QPaintEvent *)
@@ -177,7 +186,6 @@ void FormRespect::paintEvent(QPaintEvent *)
     // drawing axes
     painter->drawLine(freqAxisX,ui->view->y(),freqAxisX,timeAxisY);
     painter->drawLine(freqAxisX,timeAxisY,freqAxisSpace+ui->view->width(),timeAxisY);
-
 
     // drawing markers by frequency axis
     freqAxisStartY = ui->view->y() + ui->view->height() - ui->view->horizontalScrollBar()->height();
@@ -208,7 +216,6 @@ void FormRespect::paintEvent(QPaintEvent *)
         painter->drawText(freqLabelX,y+4,QString::number(freqValue*0.001,'f',2));
     }
 
-
     // drawing markers by time axis
     timeAxisStopX = timeAxisStartX + ui->view->width() - AXIS_WIDTH/2 - SCROLLBAR_SIZE;
     double timeMarksCount = (double) (timeAxisStopX - timeAxisStartX) / timeMarkMinSpacer;
@@ -237,31 +244,19 @@ void FormRespect::paintEvent(QPaintEvent *)
     painter->drawText(timeAxisStopX-40,timeMarkEndY+14,QString::number(timeMaxValue,'f',3));
 
     // markers
-    double timePerPixel = (timeAxisStopX-timeAxisStartX)/(timeMaxValue-timeMinValue);
-    int pixelOffset = ui->view->mapToScene(ui->view->viewport()->rect().bottomLeft()).x();
-    int i = 0;
-    while(i < markers.count())
-    {
-        QPointF triangle[3];
-        QPolygonF poligon;
-        //top vertex
-        markers[i].setX((markers[i].time()*timePerPixel)+timeAxisStartX-pixelOffset);
-        triangle[0].setX(markers[i].x());
-        triangle[0].setY((qreal)timeAxisY);
-        //left bot vertex
-        triangle[1].setX((markers[i].time()*timePerPixel)+timeAxisStartX-5-pixelOffset);
-        triangle[1].setY((qreal)timeAxisY+10);
-        //right bot vertex
-        triangle[2].setX((markers[i].time()*timePerPixel)+timeAxisStartX+5-pixelOffset);
-        triangle[2].setY((qreal)timeAxisY+10);
-        QPainterPath tmpPath;
-        poligon << triangle[0] << triangle[1] << triangle[2];
-        tmpPath.addPolygon(poligon);
-        painter->fillPath(tmpPath,QBrush(Qt::red));
-        i++;
-    }
+    //double timePerPixel = (timeAxisStopX-timeAxisStartX)/(timeMaxValue-timeMinValue); // should be corect and its look's like
+    double timePerPixel = ui->view->scene()->width()/sndFileTime; // HAVE TO BE OR SOMTHING ELSE IS NOT !!!!
+    double sceneOffset = -ui->view->mapToScene(ui->view->viewport()->rect().bottomLeft()).x()-2; // i dont like this "-2"... why it have to be here ?
+    QList<QGraphicsItem *> items = aXScene->items(); // list of all markers
+    for(int i =0;i < items.count(); i++)
+        aXScene->removeItem(items[i]); // removing old one
+
+    for (int i = 0; i<markers.count();i++) // creating new one
+        aXScene->addRect(markers[i].time()*timePerPixel + sceneOffset,0,10,10,QPen(QColor("red")),QBrush(QColor("red")));
+
     // ending
     painter->end();
+    ui->view->addMarkers(markers); //painting markers on graphics
 }
 
 void FormRespect::setFileTime(double v)
@@ -309,14 +304,6 @@ void FormRespect::load(const QString &path)
     in.setVersion(QDataStream::Qt_4_6);
     int size;
     in >> size;
-    double time;
-    int freq;
-//    QString string;
-//    for (int i=0; i<size; i++)
-//    {
-//        in >> time >> freq >> string;
-//        view()->addItem( MarkerPoint(time,freq,string,view()) );
-//    }
 }
 
 void FormRespect::loadFrom()
